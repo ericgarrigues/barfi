@@ -16,12 +16,21 @@ def load_schemas():
     schema_names = list(schemas.keys())
     return {'schema_names': schema_names, 'schemas': schemas}
 
+def load_schema(schema_name):
+    try:
+        with open(schema_name, 'rb') as handle_read:
+            schema = pickle.load(handle_read)
+    except FileNotFoundError:
+        schema = {}
+
+    return {'schema': schema}
 
 def save_schema(schema_name: str, schema_data: Dict):
     try:
         with open('schemas.barfi', 'rb') as handle_read:
             schemas = pickle.load(handle_read)
     except FileNotFoundError:
+        print("Schema file not found, unable to read")
         schemas = {}
 
     with open('schemas.barfi', 'wb') as handle_write:

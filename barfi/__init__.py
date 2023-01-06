@@ -9,7 +9,7 @@ from .manage_schema import editor_preset
 
 import os
 
-_RELEASE = False
+_RELEASE = True
 
 # Declare a Streamlit component. `declare_component` returns a function
 # that is used to create instances of the component. We're naming this
@@ -48,9 +48,12 @@ else:
 
 def st_barfi(base_blocks: Union[List[Block], Dict], load_schema: str = None, compute_engine: bool = True, key=None):
     if load_schema:
-        editor_schema = load_schema_name(load_schema)
+        try:
+            editor_schema = load_schema_name(load_schema)
+        except:
+            editor_schema = None
     else:
-        editor_schema = None
+            editor_schema = None
 
     schemas_in_db = load_schemas()
     schema_names_in_db = schemas_in_db['schema_names']
@@ -80,22 +83,25 @@ def st_barfi(base_blocks: Union[List[Block], Dict], load_schema: str = None, com
             'Invalid type for base_blocks passed to the st_barfi component.')
 
     _from_client = _component_func(base_blocks=base_blocks_data, load_editor_schema=editor_schema,
-                                   load_schema_names=schema_names_in_db, load_schema_name=load_schema, editor_setting=editor_setting,
+                                   load_schema_names=schema_names_in_db, load_schema_name=load_schema,
+                                   editor_setting=editor_setting,
                                    key=key, default={'command': 'skip', 'editor_state': {}})
-
+    # print(_from_client['command'])
     if _from_client['command'] == 'execute':
+        save_schema(
+            schema_name=_from_client['schema_name'], schema_data=_from_client['editor_state'])
         if compute_engine:
             _ce = ComputeEngine(blocks=base_blocks_list)
             _ce.add_editor_state(_from_client['editor_state'])
             _ce._map_block_link()
             _ce._execute_compute()
-            return _ce.get_result()
+            return _ce
         else:
             _ce = ComputeEngine(blocks=base_blocks_list)
             _ce.add_editor_state(_from_client['editor_state'])
             _ce._map_block_link()
-            # return _ce.get_result()
-            return _from_client
+            # return _from_client
+            return _ce
     if _from_client['command'] == 'save':
         save_schema(
             schema_name=_from_client['schema_name'], schema_data=_from_client['editor_state'])

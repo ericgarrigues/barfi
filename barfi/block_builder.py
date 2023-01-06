@@ -190,3 +190,9 @@ class Block(object):
 
     def add_compute(self, _func: Callable):
         self._on_compute = types.MethodType(_func, self)
+
+    def delete_ressource(*args):
+        print(args)
+
+    def add_delete(self, _func: Callable):
+        self.delete_ressource = types.MethodType(_func, self)

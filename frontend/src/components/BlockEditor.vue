@@ -1,7 +1,7 @@
 <template>
     <div id="editorCanvas">
         <!-- Menu Modal -->
-        <div
+        <!-- <div
             class="modal"
             :style="menuModal ? 'display: block;' : 'display: none;'"
         >
@@ -73,12 +73,13 @@
                     </p>
                 </div>
             </div>
-        </div>
+        </div> -->
         <!-- Block Link Editor -->
         <baklava-editor :plugin="viewPlugin" />
         <div class="button-menu">
-            <button @click="menuModal = !menuModal">Menu</button>
-            <button @click="executeEditorData">Execute</button>
+            <!-- <button @click="menuModal = !menuModal">Menu</button> -->
+            <button @click="saveEditorData">Save</button>
+            <button @click="executeEditorData">Save & Execute</button>
         </div>
     </div>
 </template>
@@ -122,9 +123,9 @@ export default {
         this.editor.use(this.engine);
 
         // Show a minimap in the top right corner
-        this.viewPlugin.enableMinimap = true;
+        this.viewPlugin.enableMinimap = false ;
 
-        console.log(this.args);
+        // console.log(this.args);
         // Read the infos on the node passed in from Streamlit
         // and register them.
         this.args.base_blocks.forEach((el) => {
@@ -158,10 +159,11 @@ export default {
         this.editor.events.addNode.addListener(this, (data) => {
             this.editor._nodes.forEach((node) => {
                 if (node.id === data.id) {
-                    node.name = node.name + "-" + this.BlockNameID[data.name]++;
+                    node.name = node.name + "-" + this.generateUUId();
                 }
             });
         });
+            //result: string = this.makeString();
     },
     methods: {
         executeEditorData() {
@@ -169,17 +171,18 @@ export default {
             // Streamlit via `Streamlit.setComponentValue`.
             Streamlit.setComponentValue({
                 command: "execute",
+                schema_name: this.loadSchemaName,
                 editor_state: this.editor.save(),
             });
         },
         saveEditorData() {
             Streamlit.setComponentValue({
                 command: "save",
-                schema_name: this.saveSchemaName,
+                schema_name: this.loadSchemaName,
                 editor_state: this.editor.save(),
             });
-            this.saveSchemaName = "";
-            this.menuModal = !this.menuModal;
+            // this.saveSchemaName = "";
+            // this.menuModal = !this.menuModal;
         },
         activateTab(tabName) {
             if (tabName === "listTab") {
@@ -190,6 +193,19 @@ export default {
                 this.listTab = false;
                 this.saveTab = true;
             }
+        },
+        generateUUId() {
+        //    makeString(): string {
+            let outString = "";
+            let inOptions = "abcdefghijklmnopqrstuvwxyz0123456789";
+            // let outString: string = "";
+            // let inOptions: string = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+            // for (let i = 0; i < 12; i++) {
+            for (let i = 0; i < 12; i++) {
+              outString += inOptions.charAt(Math.floor(Math.random() * inOptions.length));
+            }
+            return outString;
         },
     },
 };

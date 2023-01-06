@@ -37,6 +37,14 @@ class ComputeEngine(object):
     def get_result(self) -> Dict:
         # return self._active_blocks
         return self._result
+    
+    def get_dag(self) -> list:
+        dag = [ self._active_blocks[n] for n in list(nx.topological_sort(self._graph)) ]
+        return dag
+
+    def get_dag_reverse(self) -> list:
+        reversed_dag = reversed([ self._active_blocks[n] for n in list(nx.topological_sort(self._graph)) ])
+        return [ r for r in reversed_dag ]
 
     def _map_block_link(self):
         if bool(self._editor_state):
