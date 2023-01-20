@@ -1,10 +1,11 @@
+import streamlit as st
 import streamlit.components.v1 as components
 from typing import List, Dict, Union
 
 # import barfi components
 from .block_builder import Block
 from .compute_engine import ComputeEngine
-from .manage_schema import load_schema_name, load_schemas, save_schema
+from .manage_schema import load_schema_name, save_schema
 from .manage_schema import editor_preset
 
 import os
@@ -46,21 +47,18 @@ else:
 # "name" argument without having it get recreated.
 
 
-def st_barfi(base_blocks: Union[List[Block], Dict], load_schema: str = None, compute_engine: bool = True, key=None):
+def st_barfi(storage_driver, storage_bucket, base_blocks: Union[List[Block], Dict], load_schema: str = None, compute_engine: bool = True, key=None):
     if load_schema:
         try:
-            editor_schema = load_schema_name(load_schema)
+            editor_schema = load_schema_name(load_schema, storage_driver, storage_bucket)
         except:
             editor_schema = None
     else:
             editor_schema = None
 
-    schemas_in_db = load_schemas()
-    schema_names_in_db = schemas_in_db['schema_names']
+    schema_names_in_db = []
 
     editor_setting = {'compute_engine': compute_engine}
-
-    # base_blocks_data = [block._export() for block in base_blocks]
 
     if isinstance(base_blocks, List):
         base_blocks_data = [block._export() for block in base_blocks]
@@ -88,8 +86,10 @@ def st_barfi(base_blocks: Union[List[Block], Dict], load_schema: str = None, com
                                    key=key, default={'command': 'skip', 'editor_state': {}})
     # print(_from_client['command'])
     if _from_client['command'] == 'execute':
+        schema_name = _from_client['schema_name']
         save_schema(
-            schema_name=_from_client['schema_name'], schema_data=_from_client['editor_state'])
+            schema_name=schema_name, schema_data=_from_client['editor_state'],
+            storage_driver=storage_driver, storage_bucket=storage_bucket)
         if compute_engine:
             _ce = ComputeEngine(blocks=base_blocks_list)
             _ce.add_editor_state(_from_client['editor_state'])
@@ -100,22 +100,18 @@ def st_barfi(base_blocks: Union[List[Block], Dict], load_schema: str = None, com
             _ce = ComputeEngine(blocks=base_blocks_list)
             _ce.add_editor_state(_from_client['editor_state'])
             _ce._map_block_link()
-            # return _from_client
             return _ce
     if _from_client['command'] == 'save':
-        save_schema(
-            schema_name=_from_client['schema_name'], schema_data=_from_client['editor_state'])
+        schema_name = _from_client['schema_name']
+        save_schema( schema_name=schema_name,
+                     schema_data=_from_client['editor_state'],
+                     storage_driver=storage_driver, storage_bucket=storage_bucket)
+        with st.sidebar:
+            st.success("Schema %s saved" % schema_name)
     if _from_client['command'] == 'load':
         load_schema = _from_client['schema_name']
-        editor_schema = load_schema_name(load_schema)
+        editor_schema = load_schema_name(load_schema, storage_driver, storage_bucket)
     else:
         pass
 
     return {}
-
-
-def barfi_schemas():
-    schemas_in_db = load_schemas()
-    schema_names_in_db = schemas_in_db['schema_names']
-
-    return schema_names_in_db
